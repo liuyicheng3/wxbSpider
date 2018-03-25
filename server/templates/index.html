@@ -1,0 +1,108 @@
+<html>
+    <head>
+    <title>WebSpider</title>
+    </head>
+    <body>
+      <h1 id="label_summary">当前已爬取{{count}}篇文章!</h1>
+    </body>
+    <label id="label_status"></label><br/>
+    <input id="btn" type="button"style="width:100px;height:60px;"  value="{{action}}"/><br/>
+    <div id="con"></div>
+<script>
+    var current_status= '{{status}}' ;
+
+
+    function ajax(url, fnSucc, fnFaild){
+    //1.创建对象
+    var oAjax = null;
+    if(window.XMLHttpRequest){
+        oAjax = new XMLHttpRequest();
+    }else{
+        oAjax = new ActiveXObject("Microsoft.XMLHTTP");
+    }
+
+    //2.连接服务器
+    oAjax.open('GET', url, true);   //open(方法, url, 是否异步)
+
+    //3.发送请求
+    oAjax.send();
+
+    //4.接收返回
+    oAjax.onreadystatechange = function(){  //OnReadyStateChange事件
+        if(oAjax.readyState == 4){  //4为完成
+            if(oAjax.status == 200){    //200为成功
+                fnSucc(oAjax.responseText)
+            }else{
+                if(fnFaild){
+                    fnFaild();
+                }
+            }
+        }
+    };
+    }
+
+
+    window.onload = function(){
+        var refreshInterval = 3000
+        var oBtn = document.getElementById('btn');
+        var oCon = document.getElementById('con');
+        var label_status = document.getElementById('label_status');
+        var label_summary = document.getElementById('label_summary');
+
+        function refresh()
+        {
+            if(current_status =="started"){
+                ajax('/wxb/status',function(str){
+                    var resp = JSON.parse(str)
+                    label_summary.innerHTML = "当前已爬取"+ resp.count +"篇文章!"
+                    current_status = resp.current_status
+                    if (current_status== 'started'){
+                        label_status.innerHTML = resp.spide_progress
+                        oBtn.value = 'stop'
+                    }else {
+                        label_status.innerHTML = '等待启动'
+                        oBtn.value = 'start'
+                    }
+                });
+            }
+
+        }
+
+        if(current_status == 'started'){
+            label_status.innerHTML = '正在爬取'
+            oBtn.value = 'stop'
+            setInterval(refresh, refreshInterval);
+        }else {
+            label_status.innerHTML = '等待启动'
+            oBtn.value = 'start'
+            clearInterval(refresh)
+        }
+        oBtn.onclick = function(){
+            if(current_status == 'started'){
+                 ajax('/wxb/stop',function(str){
+                     alert('停止成功!')
+                     label_status.innerHTML = '等待启动'
+                     oBtn.value = 'start'
+                     current_status = 'stopped'
+                     oCon.innerHTML = str
+                     clearInterval(refresh)
+
+                 });
+            }else {
+                ajax('/wxb/start',function(str){
+                    alert('启动成功!')
+                    label_status.innerHTML = '正在爬取'
+                    oBtn.value = 'stop'
+                    current_status = 'started'
+                    oCon.innerHTML = str
+                    setInterval(refresh, refreshInterval)
+
+                 });
+            }
+
+        }
+    }
+
+
+</script>
+</html>

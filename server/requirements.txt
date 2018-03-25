@@ -1,0 +1,4 @@
+requests==2.12.4
+Flask==0.12
+Werkzeug==0.14.1
+beautifulsoup4==4.6.0
